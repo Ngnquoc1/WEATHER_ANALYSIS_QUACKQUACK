@@ -106,7 +106,8 @@ class WeatherController extends Controller
                     'longitude' => $data['longitude'],
                     'timezone' => $data['timezone'],
                     'elevation' => $data['elevation'],
-                    'name' => $this->reverseGeocodeService->reverse((float)$lat, (float)$lon)
+                    'name' => $this->reverseGeocodeService->reverse((float)$lat, (float)$lon),
+                    'details' => $this->reverseGeocodeService->reverseDetailed((float)$lat, (float)$lon)
                 ],
                 'current_weather' => $this->processCurrentWeather($data['current']),
                 'hourly_forecast' => $this->processHourlyForecast($data['hourly']),
@@ -805,6 +806,45 @@ class WeatherController extends Controller
             return response()->json([
                 'error' => 'Server error',
                 'message' => 'An unexpected error occurred'
+            ], 500);
+        }
+    }
+
+    /**
+     * Reverse geocode coordinates to detailed location information
+     *
+     * @param Request $request
+     * @param float $lat Latitude
+     * @param float $lon Longitude
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function reverseGeocode(Request $request, $lat, $lon)
+    {
+        try {
+            // Validate coordinates
+            if (!is_numeric($lat) || !is_numeric($lon)) {
+                return response()->json([
+                    'error' => 'Invalid coordinates',
+                    'message' => 'Latitude and longitude must be numeric'
+                ], 400);
+            }
+
+            if ($lat < -90 || $lat > 90 || $lon < -180 || $lon > 180) {
+                return response()->json([
+                    'error' => 'Coordinates out of range',
+                    'message' => 'Invalid coordinate values'
+                ], 400);
+            }
+
+            $details = $this->reverseGeocodeService->reverseDetailed((float)$lat, (float)$lon);
+
+            return response()->json($details);
+
+        } catch (\Exception $e) {
+            Log::error('Reverse geocode error: ' . $e->getMessage());
+            return response()->json([
+                'error' => 'Reverse geocode failed',
+                'message' => 'Could not get location details'
             ], 500);
         }
     }

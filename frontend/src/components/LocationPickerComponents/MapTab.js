@@ -295,7 +295,7 @@ const MapTab = ({
 
   const reverseGeocodeName = async (lat, lon) => {
     try {
-      const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=10&accept-language=vi`;
+      const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&addressdetails=1&accept-language=vi&zoom=18`;
       const res = await fetch(url, {
         headers: {
           'User-Agent': 'weather-dashboard/1.0 (+https://localhost)'
@@ -303,11 +303,27 @@ const MapTab = ({
       });
       if (!res.ok) return null;
       const data = await res.json();
-      return data?.address?.city
-        || data?.address?.town
-        || data?.address?.village
-        || data?.display_name
-        || null;
+      
+      // Use display_name for detailed address
+      if (data?.display_name) {
+        return data.display_name;
+      }
+      
+      // Fallback: construct from address components
+      if (data?.address) {
+        const addr = data.address;
+        const parts = [];
+        if (addr.house_number) parts.push(addr.house_number);
+        if (addr.road) parts.push(addr.road);
+        if (addr.neighbourhood) parts.push(addr.neighbourhood);
+        if (addr.suburb) parts.push(addr.suburb);
+        if (addr.city) parts.push(addr.city);
+        if (addr.state) parts.push(addr.state);
+        if (addr.country) parts.push(addr.country);
+        return parts.length > 0 ? parts.join(', ') : null;
+      }
+      
+      return null;
     } catch (e) {
       console.warn('Reverse geocode (Nominatim) failed', e);
       return null;

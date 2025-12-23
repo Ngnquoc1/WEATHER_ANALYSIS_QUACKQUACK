@@ -250,13 +250,33 @@ export const getCurrentLocation = () => {
  */
 const getLocationName = async (lat, lon) => {
     try {
-        // For now, return a simple location name based on coordinates
-        // In production, you might want to implement this on the backend
-        // to avoid CORS issues with external APIs
-        return `Vị trí (${lat.toFixed(2)}, ${lon.toFixed(2)})`;
+        // Use backend endpoint to get location name
+        const details = await getLocationDetails(lat, lon);
+        return details?.display_name || `Vị trí (${lat.toFixed(2)}, ${lon.toFixed(2)})`;
     } catch (error) {
         console.warn('Location name generation failed:', error.message);
         return null; // Return null to use coordinates fallback
+    }
+};
+
+/**
+ * Get detailed location information from coordinates
+ * @param {number} lat - Latitude
+ * @param {number} lon - Longitude
+ * @returns {Promise<Object>} - Detailed location info with display_name and address
+ */
+export const getLocationDetails = async (lat, lon) => {
+    try {
+        const response = await axios.get(`${API_BASE_URL}/location/reverse/${lat}/${lon}`, {
+            timeout: 10000
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Error getting location details:', error);
+        return {
+            display_name: `Vị trí (${lat.toFixed(4)}, ${lon.toFixed(4)})`,
+            address: {}
+        };
     }
 };
 

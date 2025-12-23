@@ -87,6 +87,7 @@ const DashboardPage = () => {
     }, [location.state]);
 
     const [resolvedLocationName, setResolvedLocationName] = useState(null);
+    const [locationDetails, setLocationDetails] = useState(null);
 
     // Fetch weather data when component mounts or location changes
     useEffect(() => {
@@ -98,7 +99,15 @@ const DashboardPage = () => {
             try {
                 const data = await fetchWeatherData(selectedLocation.lat, selectedLocation.lon);
                 setWeatherData(data);
-                setResolvedLocationName(data?.location?.name || selectedLocation?.name);
+                
+                // Get detailed location info
+                if (data?.location?.details) {
+                    setLocationDetails(data.location.details);
+                    setResolvedLocationName(data.location.details.display_name);
+                } else {
+                    setLocationDetails(null);
+                    setResolvedLocationName(data?.location?.name || selectedLocation?.name);
+                }
             } catch (err) {
                 setError('Không thể tải dữ liệu thời tiết. Vui lòng thử lại sau.');
                 console.error('Error loading weather data:', err);
@@ -182,6 +191,22 @@ const DashboardPage = () => {
                         {/* Current Location Display */}
                         <div className="current-location-banner">
                             <h2>📍 {resolvedLocationName || selectedLocation?.name}</h2>
+                            {locationDetails?.address && Object.keys(locationDetails.address).length > 0 && (
+                                <div className="location-details">
+                                    {locationDetails.address.road && (
+                                        <p><strong>Đường:</strong> {locationDetails.address.road}</p>
+                                    )}
+                                    {locationDetails.address.suburb && (
+                                        <p><strong>Phường/Xã:</strong> {locationDetails.address.suburb}</p>
+                                    )}
+                                    {locationDetails.address.city && (
+                                        <p><strong>Thành phố/Quận:</strong> {locationDetails.address.city}</p>
+                                    )}
+                                    {locationDetails.address.postcode && (
+                                        <p><strong>Mã bưu điện:</strong> {locationDetails.address.postcode}</p>
+                                    )}
+                                </div>
+                            )}
                             <p>
                                 Vĩ độ: {weatherData.location?.latitude}° | 
                                 Kinh độ: {weatherData.location?.longitude}° | 

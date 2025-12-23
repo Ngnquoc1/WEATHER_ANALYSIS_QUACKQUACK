@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
-import { fetchLocationByName } from '../services/weatherService';
+import { fetchLocationByName, getLocationDetails } from '../services/weatherService';
 import RainMap from '../components/RainMap';
 import './SearchPage.css';
 
@@ -13,6 +13,7 @@ const SearchPage = () => {
     const [customLat, setCustomLat] = useState('');
     const [customLon, setCustomLon] = useState('');
     const [selectedLocation, setSelectedLocation] = useState(null);
+    const [locationDetails, setLocationDetails] = useState(null);
     const [loading, setLoading] = useState(false);
     const [searchLoading, setSearchLoading] = useState(false);
     const [error, setError] = useState('');
@@ -74,18 +75,29 @@ const SearchPage = () => {
         setError('');
         setLoading(true);
 
-        // Simulate API call to get location name
-        setTimeout(() => {
-            const locationName = `Tọa độ ${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+        // Fetch detailed location info from Nominatim
+        try {
+            const details = await getLocationDetails(lat, lon);
             const locationData = {
-                name: locationName,
+                name: details?.display_name || `Tọa độ ${lat.toFixed(4)}, ${lon.toFixed(4)}`,
                 latitude: lat,
                 longitude: lon
             };
             
             setSelectedLocation(locationData);
+            setLocationDetails(details);
             setLoading(false);
-        }, 1000);
+        } catch (err) {
+            console.error('Error fetching location details:', err);
+            const locationData = {
+                name: `Tọa độ ${lat.toFixed(4)}, ${lon.toFixed(4)}`,
+                latitude: lat,
+                longitude: lon
+            };
+            setSelectedLocation(locationData);
+            setLocationDetails(null);
+            setLoading(false);
+        }
     };
 
 
@@ -225,6 +237,22 @@ const SearchPage = () => {
                                     <h3>Vị Trí Đã Chọn:</h3>
                                     <div className="location-info">
                                         <p><strong>Tên:</strong> {selectedLocation.name}</p>
+                                        {locationDetails?.address && Object.keys(locationDetails.address).length > 0 && (
+                                            <div className="location-details">
+                                                {locationDetails.address.road && (
+                                                    <p><strong>Đường:</strong> {locationDetails.address.road}</p>
+                                                )}
+                                                {locationDetails.address.suburb && (
+                                                    <p><strong>Phường/Xã:</strong> {locationDetails.address.suburb}</p>
+                                                )}
+                                                {locationDetails.address.city && (
+                                                    <p><strong>Thành phố/Quận:</strong> {locationDetails.address.city}</p>
+                                                )}
+                                                {locationDetails.address.postcode && (
+                                                    <p><strong>Mã bưu điện:</strong> {locationDetails.address.postcode}</p>
+                                                )}
+                                            </div>
+                                        )}
                                         <p><strong>Vĩ độ:</strong> {selectedLocation.latitude}</p>
                                         <p><strong>Kinh độ:</strong> {selectedLocation.longitude}</p>
                                     </div>

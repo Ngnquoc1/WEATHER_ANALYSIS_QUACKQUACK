@@ -30,6 +30,9 @@ Route::prefix('weather')->group(function () {
 // Location search API - proxy for Open-Meteo Geocoding API to avoid CORS
 Route::get('/location/search', [WeatherController::class, 'searchLocation']);
 
+// Reverse geocode API - get detailed location info from coordinates
+Route::get('/location/reverse/{lat}/{lon}', [WeatherController::class, 'reverseGeocode']);
+
 // Affiliate product recommendations based on weather
 Route::get('/recommendations', [RecommendationController::class, 'getRecommendations']);
 
